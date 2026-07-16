@@ -1,0 +1,6 @@
+{
+  "name": "DOCO",
+  "description": "Offline-First PWA Document Manager for Indonesian families by Looca Apps",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

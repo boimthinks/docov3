@@ -1,0 +1,198 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db';
+import { LucideIcon } from './LucideIcon';
+import { motion } from 'motion/react';
+
+interface LockScreenProps {
+  onUnlock: () => void;
+}
+
+export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
+  const [bioScanning, setBioScanning] = useState(false);
+  const [bioSuccess, setBioSuccess] = useState(false);
+
+  const securityPinSetting = useLiveQuery(() => db.settings.get('security_pin'));
+  const isBioEnabledSetting = useLiveQuery(() => db.settings.get('biometric_enabled'));
+
+  const savedPin = securityPinSetting?.value || '1234';
+  const isBioEnabled = isBioEnabledSetting?.value === 'true';
+
+  useEffect(() => {
+    // If PIN length reaches 4, check it
+    if (pin.length === 4) {
+      if (pin === savedPin) {
+        onUnlock();
+      } else {
+        setError(true);
+        setPin('');
+        // Reset error state after 1 second
+        const timer = setTimeout(() => setError(false), 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [pin, savedPin, onUnlock]);
+
+  const handleKeyPress = (num: string) => {
+    if (pin.length < 4) {
+      setPin((prev) => prev + num);
+    }
+  };
+
+  const handleBackspace = () => {
+    setPin((prev) => prev.slice(0, -1));
+  };
+
+  const handleBiometric = () => {
+    if (!isBioEnabled) return;
+    setBioScanning(true);
+    // Simulate biometric scan
+    setTimeout(() => {
+      setBioScanning(false);
+      setBioSuccess(true);
+      setTimeout(() => {
+        onUnlock();
+      }, 500);
+    }, 1500);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900 text-white z-50 flex flex-col justify-between p-6 md:p-12 font-sans selection:bg-blue-600">
+      {/* Background patterns */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_40%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(99,102,241,0.15),transparent_40%)] pointer-events-none" />
+
+      {/* Header */}
+      <div className="flex flex-col items-center mt-8 text-center relative z-10">
+        <img src="/assets/logo-128.png" alt="DOCO" className="w-20 h-20 mb-4 object-contain" />
+        <h1 className="text-3xl font-bold tracking-tight font-sans text-white">DOCO</h1>
+        <p className="text-sm text-slate-400 mt-1">Brankas Dokumen Keluarga Anda</p>
+        <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-mono mt-3">
+          ● OFFLINE SECURE
+        </span>
+      </div>
+
+      {/* Main PIN Area */}
+      <div className="flex flex-col items-center my-auto relative z-10">
+        <h2 className="text-lg font-medium text-slate-200 mb-6">
+          Masukkan PIN Keamanan
+        </h2>
+
+        {/* Dots */}
+        <div className={`flex gap-6 mb-8 ${error ? 'animate-bounce' : ''}`}>
+          {[0, 1, 2, 3].map((index) => (
+            <div
+              key={index}
+              className={`w-4 h-4 rounded-full border-2 transition-all duration-150 ${
+                pin.length > index
+                  ? error
+                    ? 'bg-red-500 border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                    : 'bg-blue-500 border-blue-500 shadow-[0_0_8px_rgba(37,99,235,0.5)] scale-110'
+                  : 'border-slate-600 bg-transparent'
+              }`}
+            />
+          ))}
+        </div>
+
+        {error && (
+          <p className="text-red-400 text-sm font-medium animate-pulse mb-4">
+            PIN Salah, Silakan Coba Lagi
+          </p>
+        )}
+
+        {/* Hint for demo */}
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-3 max-w-xs text-center text-xs text-slate-400 mb-4 backdrop-blur-sm">
+          💡 <span className="font-semibold">Demo Hint:</span> PIN bawaan adalah{' '}
+          <span className="font-mono text-blue-400 font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">{savedPin}</span>
+        </div>
+      </div>
+
+      {/* Numeric Keypad */}
+      <div className="w-full max-w-xs mx-auto mb-6 relative z-10">
+        <div className="grid grid-cols-3 gap-4 justify-items-center">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleKeyPress(num)}
+              className="w-16 h-16 rounded-full bg-slate-800 hover:bg-slate-700 active:bg-blue-600 text-2xl font-semibold flex items-center justify-center cursor-pointer transition-colors duration-100 outline-none border border-slate-700/50"
+              id={`btn-pin-${num}`}
+            >
+              {num}
+            </button>
+          ))}
+
+          {/* Biometrics or Empty */}
+          {isBioEnabled ? (
+            <button
+              onClick={handleBiometric}
+              className={`w-16 h-16 rounded-full ${
+                bioScanning
+                  ? 'bg-blue-600 animate-pulse text-white'
+                  : 'bg-slate-800/50 hover:bg-slate-700/50 text-blue-400'
+              } flex items-center justify-center cursor-pointer transition-all duration-200 border border-slate-700/30`}
+              id="btn-pin-bio"
+              title="Gunakan Sidik Jari"
+            >
+              <LucideIcon name={bioScanning ? 'RefreshCw' : 'Activity'} size={24} />
+            </button>
+          ) : (
+            <div className="w-16 h-16" />
+          )}
+
+          {/* Zero Button */}
+          <button
+            onClick={() => handleKeyPress('0')}
+            className="w-16 h-16 rounded-full bg-slate-800 hover:bg-slate-700 active:bg-blue-600 text-2xl font-semibold flex items-center justify-center cursor-pointer transition-colors duration-100 outline-none border border-slate-700/50"
+            id="btn-pin-0"
+          >
+            0
+          </button>
+
+          {/* Delete Button */}
+          <button
+            onClick={handleBackspace}
+            disabled={pin.length === 0}
+            className="w-16 h-16 rounded-full bg-slate-800/40 hover:bg-slate-700/40 active:bg-red-900/50 text-slate-400 hover:text-white disabled:opacity-25 flex items-center justify-center cursor-pointer transition-colors duration-100 outline-none"
+            id="btn-pin-delete"
+          >
+            <LucideIcon name="X" size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Biometric Scanning Overlay */}
+      {bioScanning && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6">
+          <div className="w-24 h-24 bg-blue-600/10 border border-blue-500/30 rounded-full flex items-center justify-center animate-pulse mb-6">
+            <LucideIcon name="Activity" className="text-blue-500 animate-bounce" size={48} />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Memindai Sidik Jari...</h3>
+          <p className="text-slate-400 text-sm">Letakkan jari Anda pada sensor biometrik perangkat</p>
+        </div>
+      )}
+
+      {/* Biometric Success Overlay */}
+      {bioSuccess && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6">
+          <div className="w-24 h-24 bg-emerald-500/20 border border-emerald-500/50 rounded-full flex items-center justify-center mb-6">
+            <LucideIcon name="Check" className="text-emerald-500" size={48} />
+          </div>
+          <h3 className="text-xl font-bold mb-2 text-emerald-400">Autentikasi Berhasil</h3>
+          <p className="text-slate-400 text-sm">Membuka brankas...</p>
+        </div>
+      )}
+
+      {/* Footer Branding */}
+      <div className="text-center text-slate-500 text-xs mt-auto relative z-10">
+        DOCO v2.0 • Dioptimalkan untuk Keamanan Lokal • Produk dari Looca Apps
+      </div>
+    </div>
+  );
+};

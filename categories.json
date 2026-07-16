@@ -1,0 +1,9 @@
+[
+  { "id": 1, "name": "Identitas (KTP/SIM/Paspor)", "icon": "Contact", "color": "blue" },
+  { "id": 2, "name": "Keluarga (KK/Akte Lahir)", "icon": "Users", "color": "purple" },
+  { "id": 3, "name": "Sertifikat (Tanah/Rumah)", "icon": "FileBadge", "color": "amber" },
+  { "id": 4, "name": "Keuangan (Polis/Tabungan)", "icon": "Wallet", "color": "emerald" },
+  { "id": 5, "name": "Pendidikan (Ijazah/Rapor)", "icon": "GraduationCap", "color": "indigo" },
+  { "id": 6, "name": "Kesehatan (BPJS/KMS)", "icon": "Activity", "color": "red" },
+  { "id": 7, "name": "Lainnya", "icon": "FileText", "color": "slate" }
+]
