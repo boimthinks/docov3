@@ -26,6 +26,18 @@ export class DocoDexie extends Dexie {
       documents: '++id, title, ownerId, categoryId, number, expiry_date',
       settings: 'key, value',
     });
+    // v3: add ocr_data and scanned_at fields
+    this.version(3).stores({
+      familyMembers: '++id, name, role',
+      documents: '++id, title, ownerId, categoryId, number, expiry_date, scanned_at',
+      settings: 'key, value',
+    }).upgrade(tx => {
+      return tx.table('documents').toCollection().modify(doc => {
+        if (!doc.ocr_data) {
+          doc.ocr_data = {};
+        }
+      });
+    });
   }
 }
 

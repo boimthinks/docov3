@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 export interface FamilyMember {
   id?: number;
   name: string;
@@ -28,6 +23,23 @@ export interface Document {
   location: string; // Physical storage location
   note?: string;
   image?: string; // Base64 Compressed Image
+  scanned_at?: string; // When document was scanned
+  ocr_data: {
+    nik?: string;
+    nama?: string;
+    tempat_tgl_lahir?: string;
+    jenis_kelamin?: string;
+    golongan_darah?: string;
+    alamat?: string;
+    rt_rw?: string;
+    kel_desa?: string;
+    kecamatan?: string;
+    agama?: string;
+    status_perkawinan?: string;
+    pekerjaan?: string;
+    kewarganegaraan?: string;
+    berlaku_hingga?: string;
+  };
   created_at: number;
   updated_at: number;
 }

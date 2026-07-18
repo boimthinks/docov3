@@ -10,12 +10,30 @@ import { LucideIcon } from './LucideIcon';
 import { compressImage } from '../utils';
 import { Document, Category, FamilyMember } from '../types';
 import { DEFAULT_CATEGORIES, CATEGORY_MAP } from '../constants';
+import { DocumentScanner } from './DocumentScanner';
+import { OCRResult, ExtractedData } from '../ocr';
 
 interface AddEditDocumentProps {
   documentToEdit?: Document;
   onBack: () => void;
   onSaveSuccess: () => void;
 }
+type OcrField = {
+  nik?: string;
+  nama?: string;
+  tempatTglLahir?: string;
+  jenisKelamin?: string;
+  golonganDarah?: string;
+  alamat?: string;
+  rtRw?: string;
+  kelDesa?: string;
+  kecamatan?: string;
+  agama?: string;
+  statusPerkawinan?: string;
+  pekerjaan?: string;
+  kewarganegaraan?: string;
+  berlakuHingga?: string;
+};
 
 export const AddEditDocument: React.FC<AddEditDocumentProps> = ({
   documentToEdit,
@@ -147,7 +165,37 @@ export const AddEditDocument: React.FC<AddEditDocumentProps> = ({
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
-  // Form Submit Handler
+  const [showScanner, setShowScanner] = useState(false);
+  const [ocrData, setOcrData] = useState<OcrField>({});
+
+  const handleOcrComplete = (result: OCRResult) => {
+    const data: OcrField = {
+      nik: result.nik,
+      nama: result.nama,
+      tempatTglLahir: result.tempatTglLahir,
+      jenisKelamin: result.jenisKelamin,
+      golonganDarah: result.golonganDarah,
+      alamat: result.alamat,
+      rtRw: result.rtRw,
+      kelDesa: result.kelDesa,
+      kecamatan: result.kecamatan,
+      agama: result.agama,
+      statusPerkawinan: result.statusPerkawinan,
+      pekerjaan: result.pekerjaan,
+      kewarganegaraan: result.kewarganegaraan,
+      berlakuHingga: result.berlakuHingga,
+    };
+
+    setOcrData(data);
+
+    if (data.nik) setNumber(data.nik);
+    if (data.nama) setTitle(data.nama);
+    if (data.berlakuHingga && data.berlakuHingga !== 'SEUMUR HIDUP') {
+      setIsLifetime(false);
+      setExpiryDate(data.berlakuHingga);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -405,6 +453,26 @@ export const AddEditDocument: React.FC<AddEditDocumentProps> = ({
             className="hidden"
             id="hidden-camera-input"
           />
+
+          {/* OCR Scanner */}
+          {!showScanner && !imagePreview && (
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-all w-full justify-center"
+              id="form-btn-ocr"
+            >
+              <LucideIcon name="Scan" size={14} />
+              Scan Dokumen (OCR)
+            </button>
+          )}
+
+          {showScanner && (
+            <DocumentScanner
+              onScanComplete={handleOcrComplete}
+              onCancel={() => setShowScanner(false)}
+            />
+          )}
 
           {imagePreview ? (
             <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-900 flex flex-col items-center justify-center max-h-56">
